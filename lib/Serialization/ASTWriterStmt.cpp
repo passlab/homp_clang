@@ -2016,8 +2016,23 @@ void OMPClauseWriter::VisitOMPDependClause(OMPDependClause *C) {
 }
 
 void OMPClauseWriter::VisitOMPDeviceClause(OMPDeviceClause *C) {
-  Record.AddStmt(C->getDevice());
+  //Record.AddStmt(C->getDevice());
+  //Record.AddSourceLocation(C->getLParenLoc());
+  //homp
+  /*
+  Record.push_back(C->varlist_size());
   Record.AddSourceLocation(C->getLParenLoc());
+  for (auto *VE : C->varlists())
+    Record.AddStmt(VE);
+  */
+  Record.push_back(C->varlist_size());
+  Record.AddSourceLocation(C->getLParenLoc());
+  Record.push_back(C->getDeviceTypeModifier());
+  Record.push_back(C->getDeviceType());
+  Record.AddSourceLocation(C->getDeviceLoc());
+  Record.AddSourceLocation(C->getColonLoc());
+  for (auto *VE : C->varlists())
+    Record.AddStmt(VE);
 }
 
 void OMPClauseWriter::VisitOMPMapClause(OMPMapClause *C) {

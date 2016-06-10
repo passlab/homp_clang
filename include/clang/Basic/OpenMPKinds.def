@@ -126,6 +126,11 @@
 #ifndef OPENMP_DEFAULTMAP_MODIFIER
 #define OPENMP_DEFAULTMAP_MODIFIER(Name)
 #endif
+//homp
+#ifndef OPENMP_DEVICE_KIND
+#define OPENMP_DEVICE_KIND(Name)
+#endif
+
 
 // OpenMP directives.
 OPENMP_DIRECTIVE(threadprivate)
@@ -212,6 +217,7 @@ OPENMP_CLAUSE(dist_schedule, OMPDistScheduleClause)
 OPENMP_CLAUSE(defaultmap, OMPDefaultmapClause)
 OPENMP_CLAUSE(to, OMPToClause)
 OPENMP_CLAUSE(from, OMPFromClause)
+
 
 // Clauses allowed for OpenMP directive 'parallel'.
 OPENMP_PARALLEL_CLAUSE(if)
@@ -427,6 +433,7 @@ OPENMP_TARGET_PARALLEL_CLAUSE(proc_bind)
 OPENMP_TARGET_PARALLEL_CLAUSE(shared)
 OPENMP_TARGET_PARALLEL_CLAUSE(reduction)
 
+
 // Clauses allowed for OpenMP directive 'target parallel for'.
 // TODO: add target clauses 'is_device_ptr'
 OPENMP_TARGET_PARALLEL_FOR_CLAUSE(if)
@@ -479,6 +486,12 @@ OPENMP_MAP_KIND(tofrom)
 OPENMP_MAP_KIND(delete)
 OPENMP_MAP_KIND(release)
 OPENMP_MAP_KIND(always)
+
+//homp
+OPENMP_DEVICE_KIND(HOSTCPU)
+OPENMP_DEVICE_KIND(NVGPU)
+OPENMP_DEVICE_KIND(ITLMIC)
+
 
 // Clauses allowed for OpenMP directive 'taskloop'.
 OPENMP_TASKLOOP_CLAUSE(if)
@@ -567,3 +580,4 @@ OPENMP_DIST_SCHEDULE_KIND(static)
 #undef OPENMP_DEFAULTMAP_KIND
 #undef OPENMP_DEFAULTMAP_MODIFIER
 #undef OPENMP_TARGET_UPDATE_CLAUSE
+#undef OPENMP_DEVICE_KIND
