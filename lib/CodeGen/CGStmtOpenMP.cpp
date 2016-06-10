@@ -3216,13 +3216,13 @@ void CodeGenFunction::EmitOMPTargetDirective(const OMPTargetDirective &S) {
   if (auto *C = S.getSingleClause<OMPIfClause>()) {
     IfCond = C->getCondition();
   }
-
+/*
   // Check if we have any device clause associated with the directive.
   const Expr *Device = nullptr;
   if (auto *C = S.getSingleClause<OMPDeviceClause>()) {
     Device = C->getDevice();
   }
-
+*/
   // Check if we have an if clause whose conditional always evaluates to false
   // or if we do not have any targets specified. If so the target region is not
   // an offload entry point.
@@ -3250,8 +3250,20 @@ void CodeGenFunction::EmitOMPTargetDirective(const OMPTargetDirective &S) {
   std::tie(Fn, FnID) = EmitOMPTargetDirectiveOutlinedFunction(
       CGM, S, ParentName, IsOffloadEntry);
   OMPLexicalScope Scope(*this, S);
-  CGM.getOpenMPRuntime().emitTargetCall(*this, S, Fn, FnID, IfCond, Device,
-                                        CapturedVars);
+
+  //New
+  const Expr *Device = nullptr;
+  for (const auto *C : S.getClausesOfKind<OMPDeviceClause>()) {
+    auto IC = C->varlist_begin();
+    Device = (const Expr *) IC;
+    CGM.getOpenMPRuntime().emitTargetCall(*this, S, Fn, FnID, IfCond, Device,
+                                          CapturedVars);
+    IC++;
+  }
+
+  //CGM.getOpenMPRuntime().emitTargetCall(*this, S, Fn, FnID, IfCond, Device,
+   //                                     CapturedVars);
+
 }
 
 static void emitCommonOMPTeamsDirective(CodeGenFunction &CGF,

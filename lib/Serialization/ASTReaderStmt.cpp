@@ -1859,7 +1859,8 @@ OMPClause *OMPClauseReader::readClause() {
     C = OMPDependClause::CreateEmpty(Context, Record[Idx++]);
     break;
   case OMPC_device:
-    C = new (Context) OMPDeviceClause();
+    //C = new (Context) OMPDeviceClause();
+    C = OMPDeviceClause::CreateEmpty(Context, Record[Idx++]);
     break;
   case OMPC_map: {
     unsigned NumVars = Record[Idx++];
@@ -2236,9 +2237,26 @@ void OMPClauseReader::VisitOMPDependClause(OMPDependClause *C) {
   C->setCounterValue(Reader->Reader.ReadSubExpr());
 }
 
+/*
 void OMPClauseReader::VisitOMPDeviceClause(OMPDeviceClause *C) {
   C->setDevice(Reader->Reader.ReadSubExpr());
   C->setLParenLoc(Reader->ReadSourceLocation(Record, Idx));
+}
+*/
+void OMPClauseReader::VisitOMPDeviceClause(OMPDeviceClause *C) {
+  C->setLParenLoc(Reader->ReadSourceLocation(Record, Idx));
+  C->setDeviceTypeModifier(
+          static_cast<OpenMPDeviceClauseKind>(Record[Idx++]));
+  C->setDeviceType(
+          static_cast<OpenMPDeviceClauseKind>(Record[Idx++]));
+  C->setDeviceLoc(Reader->ReadSourceLocation(Record, Idx));
+  C->setColonLoc(Reader->ReadSourceLocation(Record, Idx));
+  unsigned NumVars = C->varlist_size();
+  SmallVector<Expr *, 16> Vars;
+  Vars.reserve(NumVars);
+  for (unsigned i = 0; i != NumVars; ++i)
+    Vars.push_back(Reader->Reader.ReadSubExpr());
+  C->setVarRefs(Vars);
 }
 
 void OMPClauseReader::VisitOMPMapClause(OMPMapClause *C) {

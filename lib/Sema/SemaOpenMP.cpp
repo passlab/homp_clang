@@ -6749,7 +6749,10 @@ OMPClause *Sema::ActOnOpenMPSingleExprClause(OpenMPClauseKind Kind, Expr *Expr,
     Res = ActOnOpenMPOrderedClause(StartLoc, EndLoc, LParenLoc, Expr);
     break;
   case OMPC_device:
-    Res = ActOnOpenMPDeviceClause(Expr, StartLoc, LParenLoc, EndLoc);
+   // Res = ActOnOpenMPDeviceClause(Expr, StartLoc, LParenLoc, EndLoc);
+    Res = ActOnOpenMPDeviceClause(DeviceTypeModifier, DeviceType, IsDeviceTypeImplicit,
+                               DepLinDeviceLoc, ColonLoc, VarList, StartLoc,
+                               LParenLoc, EndLoc);
     break;
   case OMPC_num_teams:
     Res = ActOnOpenMPNumTeamsClause(Expr, StartLoc, LParenLoc, EndLoc);
@@ -8237,6 +8240,37 @@ OMPClause *Sema::ActOnOpenMPLastprivateClause(ArrayRef<Expr *> VarList,
                                       buildPreInits(Context, ExprCaptures),
                                       buildPostUpdate(*this, ExprPostUpdates));
 }
+
+#if 0
+OMPClause *Sema::ActOnOpenMPDeviceClause(Expr *Device, SourceLocation StartLoc,
+SourceLocation LParenLoc,
+        SourceLocation EndLoc) {
+Expr *ValExpr = Device;
+
+// OpenMP [2.9.1, Restrictions]
+// The device expression must evaluate to a non-negative integer value.
+if (!IsNonNegativeIntegerValue(ValExpr, *this, OMPC_device,
+/*StrictlyPositive=*/false))
+return nullptr;
+
+return new (Context) OMPDeviceClause(ValExpr, StartLoc, LParenLoc, EndLoc);
+}
+#endif
+
+#if 0
+OMPClause *Sema::ActOnOpenMPDeviceClause(ArrayRef<Expr *> VarList,
+                                         SourceLocation StartLoc,
+SourceLocation LParenLoc,
+        SourceLocation EndLoc) {
+  SmallVector<Expr *, 8> Vars;
+  for (auto RefExpr : VarList) {
+    if (!IsNonNegativeIntegerValue(RefExpr, *this, OMPC_device, /*StrictlyPositive=*/false))
+    return nullptr;
+  Vars.push_back(RefExpr);
+  }
+return OMPDeviceClause::Create(Context, StartLoc, LParenLoc, EndLoc, Vars);
+}
+#endif
 
 OMPClause *Sema::ActOnOpenMPSharedClause(ArrayRef<Expr *> VarList,
                                          SourceLocation StartLoc,
@@ -9732,6 +9766,7 @@ Sema::ActOnOpenMPDependClause(OpenMPDependClauseKind DepKind,
   return C;
 }
 
+#if 0
 OMPClause *Sema::ActOnOpenMPDeviceClause(Expr *Device, SourceLocation StartLoc,
                                          SourceLocation LParenLoc,
                                          SourceLocation EndLoc) {
@@ -9745,6 +9780,8 @@ OMPClause *Sema::ActOnOpenMPDeviceClause(Expr *Device, SourceLocation StartLoc,
 
   return new (Context) OMPDeviceClause(ValExpr, StartLoc, LParenLoc, EndLoc);
 }
+#endif
+
 
 static bool IsCXXRecordForMappable(Sema &SemaRef, SourceLocation Loc,
                                    DSAStackTy *Stack, CXXRecordDecl *RD) {
@@ -10494,6 +10531,28 @@ checkMappableExpressionList(Sema &SemaRef, DSAStackTy *DSAS,
                                                            : CurDeclaration);
   }
 }
+
+
+ OMPClause *Sema::ActOnOpenMPDeviceClause(OpenMPDeviceClauseKind DeviceTypeModifier,
+                                          OpenMPDeviceClauseKind DeviceType, bool IsDeviceTypeImplicit,
+                                          SourceLocation DeviceLoc, SourceLocation ColonLoc,
+         ArrayRef<Expr *> VarList,
+                                         SourceLocation StartLoc, SourceLocation LParenLoc,
+        SourceLocation EndLoc) {
+  SmallVector<Expr *, 8> Vars;
+
+  for (auto RefExpr : VarList) {
+    if (!IsNonNegativeIntegerValue(RefExpr, *this, OMPC_device, /*StrictlyPositive=*/false))
+    return nullptr;
+    Vars.push_back(RefExpr);
+  }
+
+return OMPDeviceClause::Create(Context, StartLoc, LParenLoc, EndLoc, Vars,
+                               DeviceTypeModifier, DeviceType, IsDeviceTypeImplicit,
+                               DeviceLoc);
+}
+
+
 
 OMPClause *
 Sema::ActOnOpenMPMapClause(OpenMPMapClauseKind MapTypeModifier,
