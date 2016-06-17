@@ -281,7 +281,7 @@ OMPSharedClause *OMPSharedClause::Create(const ASTContext &C,
   return Clause;
 }
 //homp
-/*
+
 OMPDeviceClause *OMPDeviceClause::CreateEmpty(const ASTContext &C, unsigned N) {
   void *Mem = C.Allocate(totalSizeToAlloc<Expr *>(N));
   return new (Mem) OMPDeviceClause(N);
@@ -298,32 +298,7 @@ OMPDeviceClause *OMPDeviceClause::Create(const ASTContext &C,
   Clause->setVarRefs(VL);
   return Clause;
 }
-*/
 
-OMPDeviceClause *OMPDeviceClause::CreateEmpty(const ASTContext &C, unsigned N) {
-  void *Mem = C.Allocate(totalSizeToAlloc<Expr *>(N));
-  return new (Mem) OMPDeviceClause(N);
-}
-
-OMPDeviceClause *OMPDeviceClause::Create(const ASTContext &C,
-                                         SourceLocation StartLoc,
-                                         SourceLocation LParenLoc,
-                                         SourceLocation EndLoc,
-                                         ArrayRef<Expr *> VL,
-                                         OpenMPDeviceClauseKind TypeModifier,
-                                         OpenMPDeviceClauseKind Type,
-                                         bool TypeIsImplicit,
-                                         SourceLocation TypeLoc) {
-  void *Mem = C.Allocate(totalSizeToAlloc<Expr *>(VL.size()));
-  OMPDeviceClause *Clause =
-          new (Mem) OMPDeviceClause(TypeModifier, Type, TypeIsImplicit, TypeLoc,
-                                    StartLoc, LParenLoc, EndLoc, VL.size());
-  Clause->setVarRefs(VL);
-  Clause->setDeviceTypeModifier(TypeModifier);
-  Clause->setDeviceType(Type);
-  Clause->setDeviceLoc(TypeLoc);
-  return Clause;
-}
 
 
 OMPSharedClause *OMPSharedClause::CreateEmpty(const ASTContext &C, unsigned N) {

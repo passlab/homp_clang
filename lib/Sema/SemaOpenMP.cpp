@@ -6750,9 +6750,7 @@ OMPClause *Sema::ActOnOpenMPSingleExprClause(OpenMPClauseKind Kind, Expr *Expr,
     break;
   case OMPC_device:
    // Res = ActOnOpenMPDeviceClause(Expr, StartLoc, LParenLoc, EndLoc);
-    Res = ActOnOpenMPDeviceClause(DeviceTypeModifier, DeviceType, IsDeviceTypeImplicit,
-                               DepLinDeviceLoc, ColonLoc, VarList, StartLoc,
-                               LParenLoc, EndLoc);
+    //Res = ActOnOpenMPDeviceClause(VarList, StartLoc, LParenLoc, EndLoc);
     break;
   case OMPC_num_teams:
     Res = ActOnOpenMPNumTeamsClause(Expr, StartLoc, LParenLoc, EndLoc);
@@ -7573,6 +7571,7 @@ OMPClause *Sema::ActOnOpenMPVarListClause(
   case OMPC_capture:
   case OMPC_seq_cst:
   case OMPC_device:
+    Res = ActOnOpenMPDeviceClause(VarList, StartLoc, LParenLoc, EndLoc);
   case OMPC_threads:
   case OMPC_simd:
   case OMPC_num_teams:
@@ -8257,7 +8256,6 @@ return new (Context) OMPDeviceClause(ValExpr, StartLoc, LParenLoc, EndLoc);
 }
 #endif
 
-#if 0
 OMPClause *Sema::ActOnOpenMPDeviceClause(ArrayRef<Expr *> VarList,
                                          SourceLocation StartLoc,
 SourceLocation LParenLoc,
@@ -8270,7 +8268,7 @@ SourceLocation LParenLoc,
   }
 return OMPDeviceClause::Create(Context, StartLoc, LParenLoc, EndLoc, Vars);
 }
-#endif
+
 
 OMPClause *Sema::ActOnOpenMPSharedClause(ArrayRef<Expr *> VarList,
                                          SourceLocation StartLoc,
@@ -10533,24 +10531,6 @@ checkMappableExpressionList(Sema &SemaRef, DSAStackTy *DSAS,
 }
 
 
- OMPClause *Sema::ActOnOpenMPDeviceClause(OpenMPDeviceClauseKind DeviceTypeModifier,
-                                          OpenMPDeviceClauseKind DeviceType, bool IsDeviceTypeImplicit,
-                                          SourceLocation DeviceLoc, SourceLocation ColonLoc,
-         ArrayRef<Expr *> VarList,
-                                         SourceLocation StartLoc, SourceLocation LParenLoc,
-        SourceLocation EndLoc) {
-  SmallVector<Expr *, 8> Vars;
-
-  for (auto RefExpr : VarList) {
-    if (!IsNonNegativeIntegerValue(RefExpr, *this, OMPC_device, /*StrictlyPositive=*/false))
-    return nullptr;
-    Vars.push_back(RefExpr);
-  }
-
-return OMPDeviceClause::Create(Context, StartLoc, LParenLoc, EndLoc, Vars,
-                               DeviceTypeModifier, DeviceType, IsDeviceTypeImplicit,
-                               DeviceLoc);
-}
 
 
 

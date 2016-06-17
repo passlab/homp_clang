@@ -2245,12 +2245,7 @@ void OMPClauseReader::VisitOMPDeviceClause(OMPDeviceClause *C) {
 */
 void OMPClauseReader::VisitOMPDeviceClause(OMPDeviceClause *C) {
   C->setLParenLoc(Reader->ReadSourceLocation(Record, Idx));
-  C->setDeviceTypeModifier(
-          static_cast<OpenMPDeviceClauseKind>(Record[Idx++]));
-  C->setDeviceType(
-          static_cast<OpenMPDeviceClauseKind>(Record[Idx++]));
-  C->setDeviceLoc(Reader->ReadSourceLocation(Record, Idx));
-  C->setColonLoc(Reader->ReadSourceLocation(Record, Idx));
+  C->setDevice(Reader->Reader.ReadSubExpr());
   unsigned NumVars = C->varlist_size();
   SmallVector<Expr *, 16> Vars;
   Vars.reserve(NumVars);

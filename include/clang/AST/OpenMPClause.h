@@ -2666,7 +2666,7 @@ public:
   }
 };
 
-/*
+
     ///A class of HOMP extensions to the device clause
     class HOMPDeviceSpecifiers : public Expr{
 //                                 private llvm::TrailingObjects<OMPDeviceClause, Expr *>{
@@ -2682,30 +2682,31 @@ public:
                              SourceLocation ColonLoc1, SourceLocation ColonLoc2)
                 :Expr(
                 //We should add HOMPDeviceSpecifiersClass in Expr Declaration
-                HOMPDeviceSpecifiersClass, Type, VK, OK,
+                OMPArraySectionExprClass, Type, VK, OK,
                 (LowerBound && LowerBound->isTypeDependent()) ||
                 (Length && Length->isTypeDependent()) ||
                 (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent()),
-                Base->isValueDependent() ||
+                //  Base->isValueDependent() ||
                 (LowerBound && LowerBound->isValueDependent()) ||
                 (Length && Length->isValueDependent()) ||
                 (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent()),
-                Base->isInstantiationDependent() ||
+                //  Base->isInstantiationDependent() ||
                 (LowerBound && LowerBound->isInstantiationDependent()) ||
                 (Length && Length->isInstantiationDependent())||
-                 (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent()),
-                Base->containsUnexpandedParameterPack() ||
+                (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent()),
+                //   Base->containsUnexpandedParameterPack() ||
                 (LowerBound && LowerBound->containsUnexpandedParameterPack()) ||
                 (Length && Length->containsUnexpandedParameterPack()) ||
-                 (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent())),
+                (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent())),
                  ColonLoc1(ColonLoc1),ColonLoc2(ColonLoc2) {
           SubExprs[LOWER_BOUND] = LowerBound;
           SubExprs[LENGTH] = Length;
-          SubExprs[DEVICE_SPECIFIERS] = DeviceTypeFilter;
+          SubExprs[DEVICE_TYPE_FILTER] = DeviceTypeFilter;
         }
 
         explicit HOMPDeviceSpecifiers(EmptyShell Shell)
-                : Expr(HOMPDeviceSpecifiersClass, Shell) {}
+                : Expr(OMPArraySectionExprClass, Shell) {}
+
 
         /// \brief Return original type of the base expression for array section.
         static QualType getBaseOriginalType(const Expr *Base);
@@ -2736,99 +2737,19 @@ public:
         SourceLocation getColonLoc2() const { return ColonLoc2; }
         void setColonLoc2(SourceLocation L) { ColonLoc2 = L; }
 
-        static bool classof(const Stmt *T) {
+        /*static bool classof(const Stmt *T) {
           return T->getStmtClass() == HOMPDeviceSpecifiersClass;
+        }*/
+
+        static bool classof(const OMPClause *T) {
+          return T->getClauseKind() == OMPC_device;
         }
 
         child_range children() {
           return child_range(&SubExprs[LOWER_BOUND], &SubExprs[END_EXPR]);
         }
     };
-*/
 
-/*
-    ///A class HOMPDeviceSpecifiers that extends OMPArraySectionExpr class
-    /// \brief This represents clause 'device' in the '#pragma omp ...' directives.
-class OMPDeviceClause final
-    : public OMPVarListClause<OMPDeviceClause>,
-      private llvm::TrailingObjects<OMPDeviceClause, Expr *> {
-  friend TrailingObjects;
-  friend OMPVarListClause;
-
-    /// \brief Build clause with number of variables \a N.
-    ///
-    /// \param StartLoc Starting location of the clause.
-    /// \param LParenLoc Location of '('.
-    /// \param EndLoc Ending location of the clause.
-    /// \param N Number of the variables in the clause.
-    ///
-
-  OMPDeviceClause(SourceLocation StartLoc, SourceLocation LParenLoc,
-                  SourceLocation EndLoc, unsigned N)
-      : OMPVarListClause<OMPDeviceClause>(OMPC_device, StartLoc, LParenLoc,
-                                          EndLoc, N) {}
-
-  /// \brief Build an empty clause.
-  ///
-  /// \param N Number of variables.
-  ///
-  explicit OMPDeviceClause(unsigned N)
-      : OMPVarListClause<OMPDeviceClause>(OMPC_device, SourceLocation(),
-                                          SourceLocation(), SourceLocation(),
-                                          N) {}
-
-public:
-  /// \brief Creates clause with a list of variables \a VL.
-  ///
-  /// \param C AST context.
-  /// \param StartLoc Starting location of the clause.
-  /// \param LParenLoc Location of '('.
-  /// \param EndLoc Ending location of the clause.
-  /// \param VL List of references to the variables.
-  ///
-  static OMPDeviceClause *Create(const ASTContext &C, SourceLocation StartLoc,
-                                 SourceLocation LParenLoc,
-                                 SourceLocation EndLoc, ArrayRef<Expr *> VL);
-  /// \brief Creates an empty clause with \a N variables.
-  ///
-  /// \param C AST context.
-  /// \param N The number of variables.
-  ///
-  static OMPDeviceClause *CreateEmpty(const ASTContext &C, unsigned N);
-
-    /// \brief Set the device number.
-    ///
-    /// \param E Device number.
-    ///
-   // void setDevice(Expr *E) { Device = E; }
-    void setDevice(ArrayRef<Expr *> VL) {setVarRefs(VL);}
-
-    /// \brief Return device number.
-   // Expr *getDevice() { return cast<Expr>(Device); }
-    //Expr *getDevice() const { return cast<Expr>(Device); }
-
-   // MutableArrayRef<Expr *> getDevice() {return getVarRefs();}
-    //ArrayRef<const Expr *> getDevice() const {return getVarRefs();}
-
-    MutableArrayRef<Expr *> getDevice() {
-      return MutableArrayRef<Expr *>(varlist_end(), varlist_size());
-    }
-    ArrayRef<const Expr *> getDevice() const {
-      return llvm::makeArrayRef(varlist_end(), varlist_size());
-    }
-
-  //  child_range children() { return child_range(&Device, &Device + 1); }
-  child_range children() {
-    return child_range(reinterpret_cast<Stmt **>(varlist_begin()),
-                       reinterpret_cast<Stmt **>(varlist_end()));
-  }
-
-  static bool classof(const OMPClause *T) {
-    return T->getClauseKind() == OMPC_device;
-  }
-
-};
-*/
 
     ///A class HOMPDeviceSpecifiers that extends OMPArraySectionExpr class
     /// \brief This represents clause 'device' in the '#pragma omp ...' directives.
@@ -2839,38 +2760,6 @@ public:
         friend OMPVarListClause;
         friend class OMPClauseReader;
 
-        /// \brief Map type modifier for the 'map' clause.
-        OpenMPDeviceClauseKind DeviceTypeModifier;
-        /// \brief Map type for the 'map' clause.
-        OpenMPDeviceClauseKind DeviceType;
-        /// \brief Is this an implicit map type or not.
-        bool DeviceTypeIsImplicit;
-        /// \brief Location of the map type.
-        SourceLocation DeviceLoc;
-        /// \brief Colon location.
-        SourceLocation ColonLoc;
-
-        /// \brief Set type modifier for the clause.
-        ///
-        /// \param T Type Modifier for the clause.
-        ///
-        void setDeviceTypeModifier(OpenMPDeviceClauseKind T) { DeviceTypeModifier = T; }
-
-        /// \brief Set type for the clause.
-        ///
-        /// \param T Type for the clause.
-        ///
-        void setDeviceType(OpenMPDeviceClauseKind T) { MapType = T; }
-
-        /// \brief Set type location.
-        ///
-        /// \param TLoc Type location.
-        ///
-        void setDeviceLoc(SourceLocation TLoc) { DeviceLoc = TLoc; }
-
-        /// \brief Set colon location.
-        void setColonLoc(SourceLocation Loc) { ColonLoc = Loc; }
-
         /// \brief Build clause with number of variables \a N.
         ///
         /// \param StartLoc Starting location of the clause.
@@ -2879,15 +2768,10 @@ public:
         /// \param N Number of the variables in the clause.
         ///
 
-        OMPDeviceClause(OpenMPMapClauseKind MapTypeModifier,
-                        OpenMPMapClauseKind MapType, bool MapTypeIsImplicit,
-                        SourceLocation MapLoc, SourceLocation StartLoc, SourceLocation LParenLoc,
+        OMPDeviceClause(SourceLocation StartLoc, SourceLocation LParenLoc,
                         SourceLocation EndLoc, unsigned N)
                 : OMPVarListClause<OMPDeviceClause>(OMPC_device, StartLoc, LParenLoc,
-                                                    EndLoc, N),
-                  DeviceTypeModifier(DeviceTypeModifier),
-                  DeviceType(DeviceType),
-                  DeviceTypeIsImplicit(DeviceTypeIsImplicit), DeviceLoc(DeviceLoc) {}
+                                                    EndLoc, N) {}
 
         /// \brief Build an empty clause.
         ///
@@ -2896,11 +2780,7 @@ public:
         explicit OMPDeviceClause(unsigned N)
                 : OMPVarListClause<OMPDeviceClause>(OMPC_device, SourceLocation(),
                                                     SourceLocation(), SourceLocation(),
-                                                    N),
-                  DeviceTypeModifier(OMPC_DEVICE_unknown),
-                  DeviceType(OMPC_DEVICE_unknown),
-                  DeviceTypeIsImplicit(false),
-                  DeviceLoc() {}
+                                                    N) {}
 
     public:
         /// \brief Creates clause with a list of variables \a VL.
@@ -2913,10 +2793,7 @@ public:
         ///
         static OMPDeviceClause *Create(const ASTContext &C, SourceLocation StartLoc,
                                        SourceLocation LParenLoc,
-                                       SourceLocation EndLoc, ArrayRef<Expr *> VL,
-                                       OpenMPDeviceClauseKind TypeModifier,
-                                       OpenMPDeviceClauseKind Type, bool TypeIsImplicit,
-                                       SourceLocation TypeLoc);
+                                       SourceLocation EndLoc, ArrayRef<Expr *> VL);
         /// \brief Creates an empty clause with \a N variables.
         ///
         /// \param C AST context.
@@ -2944,30 +2821,6 @@ public:
         ArrayRef<const Expr *> getDevice() const {
           return llvm::makeArrayRef(varlist_end(), varlist_size());
         }
-
-        /// \brief Fetches mapping kind for the clause.
-        OpenMPDeviceClauseKind getDeviceType() const LLVM_READONLY { return DeivceType; }
-
-
-        /// \brief Is this an implicit map type?
-        /// We have to capture 'IsMapTypeImplicit' from the parser for more
-        /// informative error messages.  It helps distinguish map(r) from
-        /// map(tofrom: r), which is important to print more helpful error
-        /// messages for some target directives.
-        bool isImplicitDeviceType() const LLVM_READONLY { return DeviceTypeIsImplicit; }
-
-        /// \brief Fetches the map type modifier for the clause.
-        OpenMPDeviceClauseKind getDeviceTypeModifier() const LLVM_READONLY {
-          return DeviceTypeModifier;
-        }
-
-        /// \brief Fetches location of clause mapping kind.
-        SourceLocation getDeviceLoc() const LLVM_READONLY { return DeviceLoc; }
-
-        /// \brief Get colon location.
-        SourceLocation getColonLoc() const { return ColonLoc; }
-
-
 
         //  child_range children() { return child_range(&Device, &Device + 1); }
         child_range children() {
