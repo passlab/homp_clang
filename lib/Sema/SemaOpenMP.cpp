@@ -6750,9 +6750,7 @@ OMPClause *Sema::ActOnOpenMPSingleExprClause(OpenMPClauseKind Kind, Expr *Expr,
     break;
   case OMPC_device:
    // Res = ActOnOpenMPDeviceClause(Expr, StartLoc, LParenLoc, EndLoc);
-    Res = ActOnOpenMPDeviceClause(DeviceTypeModifier, DeviceType, IsDeviceTypeImplicit,
-                               DepLinDeviceLoc, ColonLoc, VarList, StartLoc,
-                               LParenLoc, EndLoc);
+    //Res = ActOnOpenMPDeviceClause(VarList, StartLoc, LParenLoc, EndLoc);
     break;
   case OMPC_num_teams:
     Res = ActOnOpenMPNumTeamsClause(Expr, StartLoc, LParenLoc, EndLoc);
@@ -7573,6 +7571,7 @@ OMPClause *Sema::ActOnOpenMPVarListClause(
   case OMPC_capture:
   case OMPC_seq_cst:
   case OMPC_device:
+    Res = ActOnOpenMPDeviceClause(VarList, StartLoc, LParenLoc, EndLoc);
   case OMPC_threads:
   case OMPC_simd:
   case OMPC_num_teams:
@@ -8256,7 +8255,6 @@ return nullptr;
 return new (Context) OMPDeviceClause(ValExpr, StartLoc, LParenLoc, EndLoc);
 }
 #endif
-
 
 OMPClause *Sema::ActOnOpenMPDeviceClause(ArrayRef<Expr *> VarList,
                                          SourceLocation StartLoc,

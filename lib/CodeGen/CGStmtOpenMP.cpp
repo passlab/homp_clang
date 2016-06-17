@@ -3251,7 +3251,7 @@ void CodeGenFunction::EmitOMPTargetDirective(const OMPTargetDirective &S) {
       CGM, S, ParentName, IsOffloadEntry);
   OMPLexicalScope Scope(*this, S);
 
-  //New
+  //homp
   const Expr *Device = nullptr;
   for (const auto *C : S.getClausesOfKind<OMPDeviceClause>()) {
     auto IC = C->varlist_begin();
@@ -3360,7 +3360,13 @@ void CodeGenFunction::EmitOMPTargetDataDirective(
   // Check if we have any device clause associated with the directive.
   const Expr *Device = nullptr;
   if (auto *C = S.getSingleClause<OMPDeviceClause>())
-    Device = C->getDevice();
+    //Device = C->getDevice();
+  //homp
+  for (const auto *C : S.getClausesOfKind<OMPDeviceClause>()) {
+    auto IC = C->varlist_begin();
+    Device = (const Expr *) IC;
+    IC++;
+  }
 
   CGM.getOpenMPRuntime().emitTargetDataCalls(*this, S, IfCond, Device, CodeGen);
 }
@@ -3380,7 +3386,14 @@ void CodeGenFunction::EmitOMPTargetEnterDataDirective(
   // Check if we have any device clause associated with the directive.
   const Expr *Device = nullptr;
   if (auto *C = S.getSingleClause<OMPDeviceClause>())
-    Device = C->getDevice();
+    //Device = C->getDevice();
+    //homp
+
+    for (const auto *C : S.getClausesOfKind<OMPDeviceClause>()) {
+      auto IC = C->varlist_begin();
+      Device = (const Expr *) IC;
+      IC++;
+    }
 
   CGM.getOpenMPRuntime().emitTargetDataStandAloneCall(*this, S, IfCond, Device);
 }
@@ -3400,7 +3413,13 @@ void CodeGenFunction::EmitOMPTargetExitDataDirective(
   // Check if we have any device clause associated with the directive.
   const Expr *Device = nullptr;
   if (auto *C = S.getSingleClause<OMPDeviceClause>())
-    Device = C->getDevice();
+    //Device = C->getDevice();
+    //homp
+    for (const auto *C : S.getClausesOfKind<OMPDeviceClause>()) {
+      auto IC = C->varlist_begin();
+      Device = (const Expr *) IC;
+      IC++;
+    }
 
   CGM.getOpenMPRuntime().emitTargetDataStandAloneCall(*this, S, IfCond, Device);
 }
@@ -3577,7 +3596,13 @@ void CodeGenFunction::EmitOMPTargetUpdateDirective(
   // Check if we have any device clause associated with the directive.
   const Expr *Device = nullptr;
   if (auto *C = S.getSingleClause<OMPDeviceClause>())
-    Device = C->getDevice();
+    //Device = C->getDevice();
+    //homp
+    for (const auto *C : S.getClausesOfKind<OMPDeviceClause>()) {
+      auto IC = C->varlist_begin();
+      Device = (const Expr *) IC;
+      IC++;
+    }
 
   CGM.getOpenMPRuntime().emitTargetDataStandAloneCall(*this, S, IfCond, Device);
 }
