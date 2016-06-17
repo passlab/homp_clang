@@ -1658,16 +1658,11 @@ public:
                                              EndLoc);
   }
        */
-        OMPClause *RebuildOMPDeviceClause(OpenMPDeviceClauseKind DeviceTypeModifier,
-                                          OpenMPDeviceClauseKind DeviceType, bool IsDeviceTypeImplicit,
-                                          SourceLocation DeviceLoc, SourceLocation ColonLoc,
-                                          ArrayRef<Expr *> VarList,
+        OMPClause *RebuildOMPDeviceClause(ArrayRef<Expr *> VarList,
                                           SourceLocation StartLoc,
                                           SourceLocation LParenLoc,
                                           SourceLocation EndLoc) {
-          return getSema().ActOnOpenMPDeviceClause(DeviceTypeModifier, DeviceType,
-                                                   IsDeviceTypeImplicit, DeviceLoc, ColonLoc,
-                                                   VarList, StartLoc, LParenLoc, EndLoc);
+          return getSema().ActOnOpenMPDeviceClause(VarList, StartLoc, LParenLoc, EndLoc);
         }
 
         /// \brief Build a new OpenMP 'map' clause.
@@ -7992,8 +7987,7 @@ TreeTransform<Derived>::TransformOMPDeviceClause(OMPDeviceClause *C) {
           return nullptr;
         Vars.push_back(EVar.get());
       }
-      return getDerived().RebuildOMPDeviceClause(C->getDeviceTypeModifier(), C->getDeviceType(), C->isImplicitDeviceType(),
-                                                 C->getDeviceLoc(), C->getColonLoc(), Vars, C->getLocStart(),
+      return getDerived().RebuildOMPDeviceClause( Vars, C->getLocStart(),
                                                  C->getLParenLoc(), C->getLocEnd());
     }
 
