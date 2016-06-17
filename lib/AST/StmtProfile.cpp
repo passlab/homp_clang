@@ -492,7 +492,7 @@ void OMPClauseProfiler::VisitOMPDependClause(const OMPDependClause *C) {
   VisitOMPClauseList(C);
 }
 void OMPClauseProfiler::VisitOMPDeviceClause(const OMPDeviceClause *C) {
-  if (C->getDevice())
+  //if (C->getDevice())
     //Profiler->VisitStmt(C->getDevice());
     VisitOMPClauseList(C);
 }
