@@ -2666,9 +2666,9 @@ public:
   }
 };
 
-
+#if 0
     ///A class of HOMP extensions to the device clause
-    class HOMPDeviceSpecifiers : public Expr{
+    class HOMPDeviceSpecifierExpr : public Expr{
 //                                 private llvm::TrailingObjects<OMPDeviceClause, Expr *>{
 
         enum {LOWER_BOUND, LENGTH, DEVICE_TYPE_FILTER, END_EXPR };
@@ -2677,12 +2677,10 @@ public:
         SourceLocation ColonLoc2;
 
     public:
-        HOMPDeviceSpecifiers(Expr *LowerBound, Expr *Length, Expr *DeviceTypeFilter, QualType Type,
+        HOMPDeviceSpecifierExpr(Expr *LowerBound, Expr *Length, Expr *DeviceTypeFilter, QualType Type,
                              ExprValueKind VK, ExprObjectKind OK,
                              SourceLocation ColonLoc1, SourceLocation ColonLoc2)
-                :Expr(
-                //We should add HOMPDeviceSpecifiersClass in Expr Declaration
-                OMPArraySectionExprClass, Type, VK, OK,
+            : Expr(HOMPDeviceSpecifierExprClass, Type, VK, OK,
                 (LowerBound && LowerBound->isTypeDependent()) ||
                 (Length && Length->isTypeDependent()) ||
                 (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent()),
@@ -2698,14 +2696,14 @@ public:
                 (LowerBound && LowerBound->containsUnexpandedParameterPack()) ||
                 (Length && Length->containsUnexpandedParameterPack()) ||
                 (DeviceTypeFilter && DeviceTypeFilter->isTypeDependent())),
-                 ColonLoc1(ColonLoc1),ColonLoc2(ColonLoc2) {
+            ColonLoc1(ColonLoc1),ColonLoc2(ColonLoc2) {
           SubExprs[LOWER_BOUND] = LowerBound;
           SubExprs[LENGTH] = Length;
           SubExprs[DEVICE_TYPE_FILTER] = DeviceTypeFilter;
         }
 
-        explicit HOMPDeviceSpecifiers(EmptyShell Shell)
-                : Expr(OMPArraySectionExprClass, Shell) {}
+        explicit HOMPDeviceSpecifierExpr(EmptyShell Shell)
+                : Expr(HOMPDeviceSpecifierExprClass, Shell) {}
 
 
         /// \brief Return original type of the base expression for array section.
@@ -2737,19 +2735,15 @@ public:
         SourceLocation getColonLoc2() const { return ColonLoc2; }
         void setColonLoc2(SourceLocation L) { ColonLoc2 = L; }
 
-        /*static bool classof(const Stmt *T) {
-          return T->getStmtClass() == HOMPDeviceSpecifiersClass;
-        }*/
-
-        static bool classof(const OMPClause *T) {
-          return T->getClauseKind() == OMPC_device;
+        static bool classof(const Stmt *T) {
+          return T->getStmtClass() == HOMPDeviceSpecifierExprClass;
         }
 
         child_range children() {
           return child_range(&SubExprs[LOWER_BOUND], &SubExprs[END_EXPR]);
         }
     };
-
+#endif
 
     ///A class HOMPDeviceSpecifiers that extends OMPArraySectionExpr class
     /// \brief This represents clause 'device' in the '#pragma omp ...' directives.
