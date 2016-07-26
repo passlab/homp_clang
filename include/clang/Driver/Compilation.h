@@ -14,7 +14,6 @@
 #include "clang/Driver/Job.h"
 #include "clang/Driver/Util.h"
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/Support/Path.h"
 #include <map>
 
 namespace llvm {
@@ -98,12 +97,7 @@ public:
   const Driver &getDriver() const { return TheDriver; }
 
   const ToolChain &getDefaultToolChain() const { return DefaultToolChain; }
-  const ToolChain *getOffloadingHostToolChain() const {
-    auto It = OrderedOffloadingToolchains.find(Action::OFK_Host);
-    if (It != OrderedOffloadingToolchains.end())
-      return It->second;
-    return nullptr;
-  }
+
   unsigned isOffloadingHostKind(Action::OffloadKind Kind) const {
     return ActiveOffloadMask & Kind;
   }
@@ -121,8 +115,8 @@ public:
     return OrderedOffloadingToolchains.equal_range(Kind);
   }
 
-  // Return an offload toolchain of the provided kind. Only one is expected to
-  // exist.
+  /// Return an offload toolchain of the provided kind. Only one is expected to
+  /// exist.
   template <Action::OffloadKind Kind>
   const ToolChain *getSingleOffloadToolChain() const {
     auto TCs = getOffloadToolChains<Kind>();
@@ -252,6 +246,15 @@ public:
 
   /// Return true if we're compiling for diagnostics.
   bool isForDiagnostics() const { return ForDiagnostics; }
+
+  /// Redirect - Redirect output of this compilation. Can only be done once.
+  ///
+  /// \param Redirects - array of pointers to paths. The array
+  /// should have a size of three. The inferior process's
+  /// stdin(0), stdout(1), and stderr(2) will be redirected to the
+  /// corresponding paths. This compilation instance becomes
+  /// the owner of Redirects and will delete the array and StringRef's.
+  void Redirect(const StringRef** Redirects);
 };
 
 } // end namespace driver

@@ -28,7 +28,6 @@
 #include "clang/AST/StmtCXX.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/TargetInfo.h"
-#include "llvm/ADT/DenseMap.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 using namespace clang;
@@ -594,10 +593,12 @@ unsigned Decl::getIdentifierNamespaceForKind(Kind DeclKind) {
     case Function:
     case CXXMethod:
     case CXXConstructor:
+    case ConstructorUsingShadow:
     case CXXDestructor:
     case CXXConversion:
     case EnumConstant:
     case Var:
+    case Binding:
     case ImplicitParam:
     case ParmVar:
     case ObjCMethod:
@@ -678,6 +679,7 @@ unsigned Decl::getIdentifierNamespaceForKind(Kind DeclKind) {
     case Captured:
     case TranslationUnit:
     case ExternCContext:
+    case Decomposition:
 
     case UsingDirective:
     case BuiltinTemplate:

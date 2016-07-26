@@ -1001,6 +1001,10 @@ CanThrowResult Sema::canThrow(const Expr *E) {
     return mergeCanThrow(CT, canSubExprsThrow(*this, E));
   }
 
+  case Expr::CXXInheritedCtorInitExprClass:
+    return canCalleeThrow(*this, E,
+                          cast<CXXInheritedCtorInitExpr>(E)->getConstructor());
+
   case Expr::LambdaExprClass: {
     const LambdaExpr *Lambda = cast<LambdaExpr>(E);
     CanThrowResult CT = CT_Cannot;
@@ -1142,6 +1146,7 @@ CanThrowResult Sema::canThrow(const Expr *E) {
   case Expr::ObjCIndirectCopyRestoreExprClass:
   case Expr::ObjCProtocolExprClass:
   case Expr::ObjCSelectorExprClass:
+  case Expr::ObjCAvailabilityCheckExprClass:
   case Expr::OffsetOfExprClass:
   case Expr::PackExpansionExprClass:
   case Expr::PseudoObjectExprClass:
