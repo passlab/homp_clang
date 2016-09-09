@@ -1085,7 +1085,7 @@ OMPClause *Parser::ParseOpenMPClause(OpenMPDirectiveKind DKind,
   case OMPC_simdlen:
   case OMPC_collapse:
   case OMPC_ordered:
-  case OMPC_device:
+  //case OMPC_device:
   case OMPC_num_teams:
   case OMPC_thread_limit:
   case OMPC_priority:
@@ -1193,6 +1193,8 @@ OMPClause *Parser::ParseOpenMPClause(OpenMPDirectiveKind DKind,
   case OMPC_from:
   case OMPC_use_device_ptr:
   case OMPC_is_device_ptr:
+  //homp
+  case OMPC_device:
     Clause = ParseOpenMPVarListClause(DKind, CKind);
     break;
   case OMPC_unknown:
@@ -1528,203 +1530,232 @@ bool Parser::ParseOpenMPVarList(OpenMPDirectiveKind DKind,
                                 OpenMPClauseKind Kind,
                                 SmallVectorImpl<Expr *> &Vars,
                                 OpenMPVarListDataTy &Data) {
-  UnqualifiedId UnqualifiedReductionId;
-  bool InvalidReductionId = false;
-  bool MapTypeModifierSpecified = false;
+    UnqualifiedId UnqualifiedReductionId;
+    bool InvalidReductionId = false;
+    bool MapTypeModifierSpecified = false;
 
-  // Parse '('.
-  BalancedDelimiterTracker T(*this, tok::l_paren, tok::annot_pragma_openmp_end);
-  if (T.expectAndConsume(diag::err_expected_lparen_after,
-                         getOpenMPClauseName(Kind)))
-    return true;
-
-  bool NeedRParenForLinear = false;
-  BalancedDelimiterTracker LinearT(*this, tok::l_paren,
-                                  tok::annot_pragma_openmp_end);
-  // Handle reduction-identifier for reduction clause.
-  if (Kind == OMPC_reduction) {
-    ColonProtectionRAIIObject ColonRAII(*this);
-    if (getLangOpts().CPlusPlus)
-      ParseOptionalCXXScopeSpecifier(Data.ReductionIdScopeSpec,
-                                     /*ObjectType=*/nullptr,
-                                     /*EnteringContext=*/false);
-    InvalidReductionId = ParseReductionId(*this, Data.ReductionIdScopeSpec,
-                                          UnqualifiedReductionId);
-    if (InvalidReductionId) {
-      SkipUntil(tok::colon, tok::r_paren, tok::annot_pragma_openmp_end,
-                StopBeforeMatch);
-    }
-    if (Tok.is(tok::colon))
-      Data.ColonLoc = ConsumeToken();
-    else
-      Diag(Tok, diag::warn_pragma_expected_colon) << "reduction identifier";
-    if (!InvalidReductionId)
-      Data.ReductionId =
-          Actions.GetNameFromUnqualifiedId(UnqualifiedReductionId);
-  } else if (Kind == OMPC_depend) {
-  // Handle dependency type for depend clause.
-    ColonProtectionRAIIObject ColonRAII(*this);
-    Data.DepKind =
-        static_cast<OpenMPDependClauseKind>(getOpenMPSimpleClauseType(
-            Kind, Tok.is(tok::identifier) ? PP.getSpelling(Tok) : ""));
-    Data.DepLinMapLoc = Tok.getLocation();
-
-    if (Data.DepKind == OMPC_DEPEND_unknown) {
-      SkipUntil(tok::colon, tok::r_paren, tok::annot_pragma_openmp_end,
-                StopBeforeMatch);
-    } else {
-      ConsumeToken();
-      // Special processing for depend(source) clause.
-      if (DKind == OMPD_ordered && Data.DepKind == OMPC_DEPEND_source) {
+    // Parse '('.
+    BalancedDelimiterTracker T(*this, tok::l_paren, tok::annot_pragma_openmp_end);
+    if (T.expectAndConsume(diag::err_expected_lparen_after,
+                           getOpenMPClauseName(Kind)))
+        return true;
+    //homp
+    if (Kind == OMPC_device) {
+        bool IsComma = true;
+        bool IsColon = true;
+        bool firstflag = true;
+        ExprResult VarExpr;
+        while (IsComma || IsColon) {
+            // Parse variable
+            if (firstflag) {
+                firstflag = false;
+                VarExpr = Actions.CorrectDelayedTyposInExpr(ParseAssignmentExpression());
+                Vars.push_back(VarExpr.get());
+            }
+            else {
+                ConsumeToken();
+                VarExpr = Actions.CorrectDelayedTyposInExpr(ParseAssignmentExpression());
+                Vars.push_back(VarExpr.get());
+            }
+            ConsumeToken();
+            // Skip ':' if any
+            IsColon = Tok.is(tok::colon);
+            // Skip ',' if any
+            IsComma = Tok.is(tok::comma);
+        }
         // Parse ')'.
         T.consumeClose();
         return false;
-      }
     }
-    if (Tok.is(tok::colon))
-      Data.ColonLoc = ConsumeToken();
     else {
-      Diag(Tok, DKind == OMPD_ordered ? diag::warn_pragma_expected_colon_r_paren
-                                      : diag::warn_pragma_expected_colon)
-          << "dependency type";
-    }
-  } else if (Kind == OMPC_linear) {
-    // Try to parse modifier if any.
-    if (Tok.is(tok::identifier) && PP.LookAhead(0).is(tok::l_paren)) {
-      Data.LinKind = static_cast<OpenMPLinearClauseKind>(
-          getOpenMPSimpleClauseType(Kind, PP.getSpelling(Tok)));
-      Data.DepLinMapLoc = ConsumeToken();
-      LinearT.consumeOpen();
-      NeedRParenForLinear = true;
-    }
-  } else if (Kind == OMPC_map) {
-    // Handle map type for map clause.
-    ColonProtectionRAIIObject ColonRAII(*this);
+        bool NeedRParenForLinear = false;
+        BalancedDelimiterTracker LinearT(*this, tok::l_paren,
+                                         tok::annot_pragma_openmp_end);
+        // Handle reduction-identifier for reduction clause.
+        if (Kind == OMPC_reduction) {
+            ColonProtectionRAIIObject ColonRAII(*this);
+            if (getLangOpts().CPlusPlus)
+                ParseOptionalCXXScopeSpecifier(Data.ReductionIdScopeSpec,
+                        /*ObjectType=*/nullptr,
+                        /*EnteringContext=*/false);
+            InvalidReductionId = ParseReductionId(*this, Data.ReductionIdScopeSpec,
+                                                  UnqualifiedReductionId);
+            if (InvalidReductionId) {
+                SkipUntil(tok::colon, tok::r_paren, tok::annot_pragma_openmp_end,
+                          StopBeforeMatch);
+            }
+            if (Tok.is(tok::colon))
+                Data.ColonLoc = ConsumeToken();
+            else
+                Diag(Tok, diag::warn_pragma_expected_colon) << "reduction identifier";
+            if (!InvalidReductionId)
+                Data.ReductionId =
+                        Actions.GetNameFromUnqualifiedId(UnqualifiedReductionId);
+        } else if (Kind == OMPC_depend) {
+            // Handle dependency type for depend clause.
+            ColonProtectionRAIIObject ColonRAII(*this);
+            Data.DepKind =
+                    static_cast<OpenMPDependClauseKind>(getOpenMPSimpleClauseType(
+                            Kind, Tok.is(tok::identifier) ? PP.getSpelling(Tok) : ""));
+            Data.DepLinMapLoc = Tok.getLocation();
 
-    /// The map clause modifier token can be either a identifier or the C++
-    /// delete keyword.
-    auto &&IsMapClauseModifierToken = [](const Token &Tok) -> bool {
-      return Tok.isOneOf(tok::identifier, tok::kw_delete);
-    };
+            if (Data.DepKind == OMPC_DEPEND_unknown) {
+                SkipUntil(tok::colon, tok::r_paren, tok::annot_pragma_openmp_end,
+                          StopBeforeMatch);
+            } else {
+                ConsumeToken();
+                // Special processing for depend(source) clause.
+                if (DKind == OMPD_ordered && Data.DepKind == OMPC_DEPEND_source) {
+                    // Parse ')'.
+                    T.consumeClose();
+                    return false;
+                }
+            }
+            if (Tok.is(tok::colon))
+                Data.ColonLoc = ConsumeToken();
+            else {
+                Diag(Tok, DKind == OMPD_ordered ? diag::warn_pragma_expected_colon_r_paren
+                                                : diag::warn_pragma_expected_colon)
+                << "dependency type";
+            }
+        } else if (Kind == OMPC_linear) {
+            // Try to parse modifier if any.
+            if (Tok.is(tok::identifier) && PP.LookAhead(0).is(tok::l_paren)) {
+                Data.LinKind = static_cast<OpenMPLinearClauseKind>(
+                        getOpenMPSimpleClauseType(Kind, PP.getSpelling(Tok)));
+                Data.DepLinMapLoc = ConsumeToken();
+                LinearT.consumeOpen();
+                NeedRParenForLinear = true;
+            }
+        } else if (Kind == OMPC_map) {
+            // Handle map type for map clause.
+            ColonProtectionRAIIObject ColonRAII(*this);
 
-    // The first identifier may be a list item, a map-type or a
-    // map-type-modifier. The map modifier can also be delete which has the same
-    // spelling of the C++ delete keyword.
-    Data.MapType =
-        IsMapClauseModifierToken(Tok)
-            ? static_cast<OpenMPMapClauseKind>(
-                  getOpenMPSimpleClauseType(Kind, PP.getSpelling(Tok)))
-            : OMPC_MAP_unknown;
-    Data.DepLinMapLoc = Tok.getLocation();
-    bool ColonExpected = false;
+            /// The map clause modifier token can be either a identifier or the C++
+            /// delete keyword.
+            auto &&IsMapClauseModifierToken = [](const Token &Tok) -> bool {
+                return Tok.isOneOf(tok::identifier, tok::kw_delete);
+            };
 
-    if (IsMapClauseModifierToken(Tok)) {
-      if (PP.LookAhead(0).is(tok::colon)) {
-        if (Data.MapType == OMPC_MAP_unknown)
-          Diag(Tok, diag::err_omp_unknown_map_type);
-        else if (Data.MapType == OMPC_MAP_always)
-          Diag(Tok, diag::err_omp_map_type_missing);
-        ConsumeToken();
-      } else if (PP.LookAhead(0).is(tok::comma)) {
-        if (IsMapClauseModifierToken(PP.LookAhead(1)) &&
-            PP.LookAhead(2).is(tok::colon)) {
-          Data.MapTypeModifier = Data.MapType;
-          if (Data.MapTypeModifier != OMPC_MAP_always) {
-            Diag(Tok, diag::err_omp_unknown_map_type_modifier);
-            Data.MapTypeModifier = OMPC_MAP_unknown;
-          } else
-            MapTypeModifierSpecified = true;
+            // The first identifier may be a list item, a map-type or a
+            // map-type-modifier. The map modifier can also be delete which has the same
+            // spelling of the C++ delete keyword.
+            Data.MapType =
+                    IsMapClauseModifierToken(Tok)
+                    ? static_cast<OpenMPMapClauseKind>(
+                            getOpenMPSimpleClauseType(Kind, PP.getSpelling(Tok)))
+                    : OMPC_MAP_unknown;
+            Data.DepLinMapLoc = Tok.getLocation();
+            bool ColonExpected = false;
 
-          ConsumeToken();
-          ConsumeToken();
+            if (IsMapClauseModifierToken(Tok)) {
+                if (PP.LookAhead(0).is(tok::colon)) {
+                    if (Data.MapType == OMPC_MAP_unknown)
+                        Diag(Tok, diag::err_omp_unknown_map_type);
+                    else if (Data.MapType == OMPC_MAP_always)
+                        Diag(Tok, diag::err_omp_map_type_missing);
+                    ConsumeToken();
+                } else if (PP.LookAhead(0).is(tok::comma)) {
+                    if (IsMapClauseModifierToken(PP.LookAhead(1)) &&
+                        PP.LookAhead(2).is(tok::colon)) {
+                        Data.MapTypeModifier = Data.MapType;
+                        if (Data.MapTypeModifier != OMPC_MAP_always) {
+                            Diag(Tok, diag::err_omp_unknown_map_type_modifier);
+                            Data.MapTypeModifier = OMPC_MAP_unknown;
+                        } else
+                            MapTypeModifierSpecified = true;
 
-          Data.MapType =
-              IsMapClauseModifierToken(Tok)
-                  ? static_cast<OpenMPMapClauseKind>(
-                        getOpenMPSimpleClauseType(Kind, PP.getSpelling(Tok)))
-                  : OMPC_MAP_unknown;
-          if (Data.MapType == OMPC_MAP_unknown ||
-              Data.MapType == OMPC_MAP_always)
-            Diag(Tok, diag::err_omp_unknown_map_type);
-          ConsumeToken();
-        } else {
-          Data.MapType = OMPC_MAP_tofrom;
-          Data.IsMapTypeImplicit = true;
+                        ConsumeToken();
+                        ConsumeToken();
+
+                        Data.MapType =
+                                IsMapClauseModifierToken(Tok)
+                                ? static_cast<OpenMPMapClauseKind>(
+                                        getOpenMPSimpleClauseType(Kind, PP.getSpelling(Tok)))
+                                : OMPC_MAP_unknown;
+                        if (Data.MapType == OMPC_MAP_unknown ||
+                            Data.MapType == OMPC_MAP_always)
+                            Diag(Tok, diag::err_omp_unknown_map_type);
+                        ConsumeToken();
+                    } else {
+                        Data.MapType = OMPC_MAP_tofrom;
+                        Data.IsMapTypeImplicit = true;
+                    }
+                } else {
+                    Data.MapType = OMPC_MAP_tofrom;
+                    Data.IsMapTypeImplicit = true;
+                }
+            } else {
+                Data.MapType = OMPC_MAP_tofrom;
+                Data.IsMapTypeImplicit = true;
+            }
+
+            if (Tok.is(tok::colon))
+                Data.ColonLoc = ConsumeToken();
+            else if (ColonExpected)
+                Diag(Tok, diag::warn_pragma_expected_colon) << "map type";
         }
-      } else {
-        Data.MapType = OMPC_MAP_tofrom;
-        Data.IsMapTypeImplicit = true;
-      }
-    } else {
-      Data.MapType = OMPC_MAP_tofrom;
-      Data.IsMapTypeImplicit = true;
+
+        bool IsComma =
+                (Kind != OMPC_reduction && Kind != OMPC_depend && Kind != OMPC_map) ||
+                (Kind == OMPC_reduction && !InvalidReductionId) ||
+                (Kind == OMPC_map && Data.MapType != OMPC_MAP_unknown &&
+                 (!MapTypeModifierSpecified ||
+                  Data.MapTypeModifier == OMPC_MAP_always)) ||
+                (Kind == OMPC_depend && Data.DepKind != OMPC_DEPEND_unknown);
+        const bool MayHaveTail = (Kind == OMPC_linear || Kind == OMPC_aligned);
+        while (IsComma || (Tok.isNot(tok::r_paren) && Tok.isNot(tok::colon) &&
+                           Tok.isNot(tok::annot_pragma_openmp_end))) {
+            ColonProtectionRAIIObject ColonRAII(*this, MayHaveTail);
+            // Parse variable
+            ExprResult VarExpr =
+                    Actions.CorrectDelayedTyposInExpr(ParseAssignmentExpression());
+            if (VarExpr.isUsable())
+                Vars.push_back(VarExpr.get());
+            else {
+                SkipUntil(tok::comma, tok::r_paren, tok::annot_pragma_openmp_end,
+                          StopBeforeMatch);
+            }
+            // Skip ',' if any
+            IsComma = Tok.is(tok::comma);
+            if (IsComma)
+                ConsumeToken();
+            else if (Tok.isNot(tok::r_paren) &&
+                     Tok.isNot(tok::annot_pragma_openmp_end) &&
+                     (!MayHaveTail || Tok.isNot(tok::colon)))
+                Diag(Tok, diag::err_omp_expected_punc)
+                << ((Kind == OMPC_flush) ? getOpenMPDirectiveName(OMPD_flush)
+                                         : getOpenMPClauseName(Kind))
+                << (Kind == OMPC_flush);
+        }
+
+        // Parse ')' for linear clause with modifier.
+        if (NeedRParenForLinear)
+            LinearT.consumeClose();
+
+        // Parse ':' linear-step (or ':' alignment).
+        const bool MustHaveTail = MayHaveTail && Tok.is(tok::colon);
+        if (MustHaveTail) {
+            Data.ColonLoc = Tok.getLocation();
+            SourceLocation ELoc = ConsumeToken();
+            ExprResult Tail = ParseAssignmentExpression();
+            Tail = Actions.ActOnFinishFullExpr(Tail.get(), ELoc);
+            if (Tail.isUsable())
+                Data.TailExpr = Tail.get();
+            else
+                SkipUntil(tok::comma, tok::r_paren, tok::annot_pragma_openmp_end,
+                          StopBeforeMatch);
+        }
+
+        // Parse ')'.
+        T.consumeClose();
+        if ((Kind == OMPC_depend && Data.DepKind != OMPC_DEPEND_unknown &&
+             Vars.empty()) ||
+            (Kind != OMPC_depend && Kind != OMPC_map && Vars.empty()) ||
+            (MustHaveTail && !Data.TailExpr) || InvalidReductionId)
+            return true;
+        return false;
     }
-
-    if (Tok.is(tok::colon))
-      Data.ColonLoc = ConsumeToken();
-    else if (ColonExpected)
-      Diag(Tok, diag::warn_pragma_expected_colon) << "map type";
-  }
-
-  bool IsComma =
-      (Kind != OMPC_reduction && Kind != OMPC_depend && Kind != OMPC_map) ||
-      (Kind == OMPC_reduction && !InvalidReductionId) ||
-      (Kind == OMPC_map && Data.MapType != OMPC_MAP_unknown &&
-       (!MapTypeModifierSpecified ||
-        Data.MapTypeModifier == OMPC_MAP_always)) ||
-      (Kind == OMPC_depend && Data.DepKind != OMPC_DEPEND_unknown);
-  const bool MayHaveTail = (Kind == OMPC_linear || Kind == OMPC_aligned);
-  while (IsComma || (Tok.isNot(tok::r_paren) && Tok.isNot(tok::colon) &&
-                     Tok.isNot(tok::annot_pragma_openmp_end))) {
-    ColonProtectionRAIIObject ColonRAII(*this, MayHaveTail);
-    // Parse variable
-    ExprResult VarExpr =
-        Actions.CorrectDelayedTyposInExpr(ParseAssignmentExpression());
-    if (VarExpr.isUsable())
-      Vars.push_back(VarExpr.get());
-    else {
-      SkipUntil(tok::comma, tok::r_paren, tok::annot_pragma_openmp_end,
-                StopBeforeMatch);
-    }
-    // Skip ',' if any
-    IsComma = Tok.is(tok::comma);
-    if (IsComma)
-      ConsumeToken();
-    else if (Tok.isNot(tok::r_paren) &&
-             Tok.isNot(tok::annot_pragma_openmp_end) &&
-             (!MayHaveTail || Tok.isNot(tok::colon)))
-      Diag(Tok, diag::err_omp_expected_punc)
-          << ((Kind == OMPC_flush) ? getOpenMPDirectiveName(OMPD_flush)
-                                   : getOpenMPClauseName(Kind))
-          << (Kind == OMPC_flush);
-  }
-
-  // Parse ')' for linear clause with modifier.
-  if (NeedRParenForLinear)
-    LinearT.consumeClose();
-
-  // Parse ':' linear-step (or ':' alignment).
-  const bool MustHaveTail = MayHaveTail && Tok.is(tok::colon);
-  if (MustHaveTail) {
-    Data.ColonLoc = Tok.getLocation();
-    SourceLocation ELoc = ConsumeToken();
-    ExprResult Tail = ParseAssignmentExpression();
-    Tail = Actions.ActOnFinishFullExpr(Tail.get(), ELoc);
-    if (Tail.isUsable())
-      Data.TailExpr = Tail.get();
-    else
-      SkipUntil(tok::comma, tok::r_paren, tok::annot_pragma_openmp_end,
-                StopBeforeMatch);
-  }
-
-  // Parse ')'.
-  T.consumeClose();
-  if ((Kind == OMPC_depend && Data.DepKind != OMPC_DEPEND_unknown &&
-       Vars.empty()) ||
-      (Kind != OMPC_depend && Kind != OMPC_map && Vars.empty()) ||
-      (MustHaveTail && !Data.TailExpr) || InvalidReductionId)
-    return true;
-  return false;
 }
 
 /// \brief Parsing of OpenMP clause 'private', 'firstprivate', 'lastprivate',
