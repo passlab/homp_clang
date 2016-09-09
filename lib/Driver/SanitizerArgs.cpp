@@ -49,8 +49,10 @@ enum CoverageFeature {
   CoverageIndirCall = 1 << 3,
   CoverageTraceBB = 1 << 4,
   CoverageTraceCmp = 1 << 5,
-  Coverage8bitCounters = 1 << 6,
-  CoverageTracePC = 1 << 7,
+  CoverageTraceDiv = 1 << 6,
+  CoverageTraceGep = 1 << 7,
+  Coverage8bitCounters = 1 << 8,
+  CoverageTracePC = 1 << 9,
 };
 
 /// Parse a -fsanitize= or -fno-sanitize= argument's values, diagnosing any
@@ -602,9 +604,7 @@ static void addIncludeLinkerOption(const ToolChain &TC,
   CmdArgs.push_back(Args.MakeArgString(LinkerOptionFlag));
 }
 
-void SanitizerArgs::addArgs(const ToolChain &TC,
-                            const llvm::Triple &EffectiveTriple,
-                            const llvm::opt::ArgList &Args,
+void SanitizerArgs::addArgs(const ToolChain &TC, const llvm::opt::ArgList &Args,
                             llvm::opt::ArgStringList &CmdArgs,
                             types::ID InputType) const {
   // Translate available CoverageFeatures to corresponding clang-cc1 flags.
@@ -617,6 +617,8 @@ void SanitizerArgs::addArgs(const ToolChain &TC,
     std::make_pair(CoverageIndirCall, "-fsanitize-coverage-indirect-calls"),
     std::make_pair(CoverageTraceBB, "-fsanitize-coverage-trace-bb"),
     std::make_pair(CoverageTraceCmp, "-fsanitize-coverage-trace-cmp"),
+    std::make_pair(CoverageTraceDiv, "-fsanitize-coverage-trace-div"),
+    std::make_pair(CoverageTraceGep, "-fsanitize-coverage-trace-gep"),
     std::make_pair(Coverage8bitCounters, "-fsanitize-coverage-8bit-counters"),
     std::make_pair(CoverageTracePC, "-fsanitize-coverage-trace-pc")};
   for (auto F : CoverageFlags) {
@@ -628,24 +630,21 @@ void SanitizerArgs::addArgs(const ToolChain &TC,
     // Instruct the code generator to embed linker directives in the object file
     // that cause the required runtime libraries to be linked.
     CmdArgs.push_back(Args.MakeArgString(
-        "--dependent-lib=" +
-        TC.getCompilerRT(EffectiveTriple, Args, "ubsan_standalone")));
+        "--dependent-lib=" + TC.getCompilerRT(Args, "ubsan_standalone")));
     if (types::isCXX(InputType))
       CmdArgs.push_back(Args.MakeArgString(
-          "--dependent-lib=" +
-          TC.getCompilerRT(EffectiveTriple, Args, "ubsan_standalone_cxx")));
+          "--dependent-lib=" + TC.getCompilerRT(Args, "ubsan_standalone_cxx")));
   }
   if (TC.getTriple().isOSWindows() && needsStatsRt()) {
-    CmdArgs.push_back(Args.MakeArgString(
-        "--dependent-lib=" +
-        TC.getCompilerRT(EffectiveTriple, Args, "stats_client")));
+    CmdArgs.push_back(Args.MakeArgString("--dependent-lib=" +
+                                         TC.getCompilerRT(Args, "stats_client")));
 
     // The main executable must export the stats runtime.
     // FIXME: Only exporting from the main executable (e.g. based on whether the
     // translation unit defines main()) would save a little space, but having
     // multiple copies of the runtime shouldn't hurt.
-    CmdArgs.push_back(Args.MakeArgString(
-        "--dependent-lib=" + TC.getCompilerRT(EffectiveTriple, Args, "stats")));
+    CmdArgs.push_back(Args.MakeArgString("--dependent-lib=" +
+                                         TC.getCompilerRT(Args, "stats")));
     addIncludeLinkerOption(TC, Args, CmdArgs, "__sanitizer_stats_register");
   }
 
@@ -757,6 +756,8 @@ int parseCoverageFeatures(const Driver &D, const llvm::opt::Arg *A) {
         .Case("indirect-calls", CoverageIndirCall)
         .Case("trace-bb", CoverageTraceBB)
         .Case("trace-cmp", CoverageTraceCmp)
+        .Case("trace-div", CoverageTraceDiv)
+        .Case("trace-gep", CoverageTraceGep)
         .Case("8bit-counters", Coverage8bitCounters)
         .Case("trace-pc", CoverageTracePC)
         .Default(0);
